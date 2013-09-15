@@ -10,6 +10,11 @@
             android:text="@string/enter_ipaddr"
             android:id="@+id/textViewEnterIP" android:singleLine="true"
             android:textSize="20dp" android:layout_marginTop="20dp"/>
+    <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/ip_format_comment"
+            android:id="@+id/textViewComments" android:textSize="15dp" android:alpha="0.5"/>
     <LinearLayout
             android:orientation="horizontal"
             android:layout_width="fill_parent"

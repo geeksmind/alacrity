@@ -22,6 +22,10 @@ public class MyActivity extends Activity {
 
     //TODO: make ipChunkList manipulations generic
 
+    //TODO: persistent storage of default ipAddr
+
+    //TODO: JSONObject and web communication
+
     public void addTextCheckerToIpChunks(EditText... editTexts) {
         for (final EditText editText : editTexts) {
             editText.addTextChangedListener(new TextWatcher() {

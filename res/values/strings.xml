@@ -2,6 +2,7 @@
 <resources>
     <string name="app_name">Alacrity</string>
     <string name="enter_ipaddr">Enter the IPAddr</string>
+    <string name="ip_format_comment">(Each IP segment should be between 0 and 255)</string>
     <string name="ip_delimiter">.</string>
     <string name="default_ipaddr_part_1">192</string>
     <string name="default_ipaddr_part_2">168</string>
