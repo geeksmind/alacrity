@@ -4,16 +4,20 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.View;
 import android.widget.*;
 
 
 public class MyActivity extends Activity {
 
-    final static private String IPADDR_BAD_FORMAT_CODE = "-1";
+    // Constants
+    private final static String CLEAR_IP = " . . . ";
+    private final static String DEFAULT_IP = "192.168.0.1";
 
+    // GUI Widgets
+    private Button setAsDefaultButton;
     private Button emitButton;
+    private LinearLayout layoutIpAddr;
     private EditText edtTextIpAddrChunk1;
     private EditText edtTextIpAddrChunk2;
     private EditText edtTextIpAddrChunk3;
@@ -28,6 +32,15 @@ public class MyActivity extends Activity {
 
     public void addTextCheckerToIpChunks(EditText... editTexts) {
         for (final EditText editText : editTexts) {
+
+            editText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+                @Override
+                public void onFocusChange(View v, boolean hasFocus) {
+                    // remove leading zeros
+                    editText.setText(editText.getText().toString().replaceFirst("^0+(?!$)", ""));
+                }
+            });
+
             editText.addTextChangedListener(new TextWatcher() {
                 @Override
                 public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -36,14 +49,25 @@ public class MyActivity extends Activity {
 
                 @Override
                 public void onTextChanged(CharSequence s, int start, int before, int count) {
-                    Log.d("BEFORE", editText.getText().toString());
-                    if (isExistGUIErrors()) {
-                        Log.d("AFTER", editText.getText().toString());
-//                        editText.setError("between 0 and 255");
-                        emitButton.setEnabled(false);
+
+                    // ipChunk local check, show error when the ipChunk is invalid
+                    if (!isIPChunkValid(editText.getText().toString())) {
+                        editText.setError("between 0 and 255");
                     } else {
-//                        editText.setError(null);
-                        emitButton.setEnabled(true);
+                        editText.setError(null);
+                        int edtViewIndex = layoutIpAddr.indexOfChild(editText);
+
+                        // shift focus to the next editText which is not the last one
+                        if (editText.getText().toString().length() == 3 && edtViewIndex < layoutIpAddr.getChildCount() - 1) {
+                            layoutIpAddr.getChildAt(edtViewIndex + 2).requestFocus();
+                        }
+                    }
+
+                    // detect GUI errors, e.g. any IpChunk invalid, then disable buttons
+                    if (isExistGUIErrors()) {
+                        setButtonsEnable(false);
+                    } else {
+                        setButtonsEnable(true);
                     }
                 }
 
@@ -63,39 +87,45 @@ public class MyActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
 
-
-        emitButton = ((Button) this.findViewById(R.id.buttonEmit));
+        emitButton = (Button) this.findViewById(R.id.buttonEmit);
+        layoutIpAddr = (LinearLayout) this.findViewById(R.id.linearLayoutIpChunkList);
+        setAsDefaultButton = (Button) this.findViewById(R.id.buttonSetAsDefault);
+        edtTextIpAddrChunk1 = (EditText) this.findViewById(R.id.editViewIpAddr1);
+        edtTextIpAddrChunk2 = (EditText) this.findViewById(R.id.editViewIpAddr2);
+        edtTextIpAddrChunk3 = (EditText) this.findViewById(R.id.editViewIpAddr3);
+        edtTextIpAddrChunk4 = (EditText) this.findViewById(R.id.editViewIpAddr4);
         cmdOptionsRadioGroup = (RadioGroup) this.findViewById(R.id.radioGroupOptions);
-        edtTextIpAddrChunk1 = ((EditText) this.findViewById(R.id.editViewIpAddr1));
-        edtTextIpAddrChunk2 = ((EditText) this.findViewById(R.id.editViewIpAddr2));
-        edtTextIpAddrChunk3 = ((EditText) this.findViewById(R.id.editViewIpAddr3));
-        edtTextIpAddrChunk4 = ((EditText) this.findViewById(R.id.editViewIpAddr4));
 
-        // make light on as default
+        // make <light on> as default
         cmdOptionsRadioGroup.check(R.id.radioButtonOn);
 
         addTextCheckerToIpChunks(edtTextIpAddrChunk1, edtTextIpAddrChunk2, edtTextIpAddrChunk3, edtTextIpAddrChunk4);
+    }
 
+    public void setButtonsEnable(boolean enable) {
+        setAsDefaultButton.setEnabled(enable);
+        emitButton.setEnabled(enable);
     }
 
     public boolean isExistGUIErrors() {
-        return getIPAddr().equals(IPADDR_BAD_FORMAT_CODE);
+        String[] ipAddrChunkList = getIPAddrChunkListFromView();
+        return !isIPChunkListValid(ipAddrChunkList);
+    }
+
+    public void setIPAddrToGUI(String ipAddr) {
+        String[] ipChunkList = ipAddr.split("\\.");
+        edtTextIpAddrChunk1.setText(ipChunkList[0].trim());
+        edtTextIpAddrChunk2.setText(ipChunkList[1].trim());
+        edtTextIpAddrChunk3.setText(ipChunkList[2].trim());
+        edtTextIpAddrChunk4.setText(ipChunkList[3].trim());  // trim is needed here, because " 1" can not be parsed.
     }
 
     public void onClearButtonClick(View v) {
-        edtTextIpAddrChunk1.setText("");
-        edtTextIpAddrChunk2.setText("");
-        edtTextIpAddrChunk3.setText("");
-        edtTextIpAddrChunk4.setText("");
-        emitButton.setEnabled(false);
+        setIPAddrToGUI(CLEAR_IP);
     }
 
     public void onResetButtonClick(View v) {
-        edtTextIpAddrChunk1.setText("192");
-        edtTextIpAddrChunk2.setText("168");
-        edtTextIpAddrChunk3.setText("0");
-        edtTextIpAddrChunk4.setText("1");
-        emitButton.setEnabled(true);
+        setIPAddrToGUI(DEFAULT_IP);
     }
 
     public void onEmitButtonClick(View v) {
@@ -108,13 +138,17 @@ public class MyActivity extends Activity {
         toast.show();
     }
 
+    public String makeString(String[] origin, String delimiter) {
+        String retVal = "";
+        for (int i = 0; i < origin.length - 1; i++) {
+            retVal += origin[i] + delimiter;
+        }
+        return retVal + origin[origin.length - 1];
+    }
+
     public String getIPAddr() {
         String[] ipAddrChunkList = getIPAddrChunkListFromView();
-        if (!isIPChunkListValid(ipAddrChunkList)) {
-            return IPADDR_BAD_FORMAT_CODE;
-        } else {
-            return ipAddrChunkList[0] + "." + ipAddrChunkList[1] + "." + ipAddrChunkList[2] + "." + ipAddrChunkList[3];
-        }
+        return makeString(ipAddrChunkList, ".");
     }
 
     public String[] getIPAddrChunkListFromView() {
