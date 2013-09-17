@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.View;
 import android.widget.*;
 
@@ -24,6 +25,8 @@ public class MyActivity extends Activity {
     private EditText edtTextIpAddrChunk4;
     private RadioGroup cmdOptionsRadioGroup;
 
+    //TODO: remove focus when buttons pushed
+
     //TODO: make ipChunkList manipulations generic
 
     //TODO: persistent storage of default ipAddr
@@ -32,12 +35,16 @@ public class MyActivity extends Activity {
 
     public void addTextCheckerToIpChunks(EditText... editTexts) {
         for (final EditText editText : editTexts) {
-
             editText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
                 @Override
                 public void onFocusChange(View v, boolean hasFocus) {
                     // remove leading zeros
-                    editText.setText(editText.getText().toString().replaceFirst("^0+(?!$)", ""));
+                    String ipChunkText = editText.getText().toString();
+                    if (!editText.isFocused() && ipChunkText.matches("(0{2}\\d|0\\d|0\\d{2})")) { // when editText lose focus and has leading zeros
+                        //this setText will invoke focus shifting again, but this time the test will not pass.
+                        editText.setText(ipChunkText.replaceFirst("^0+(?!$)", ""));
+                        Log.d("FocusChange", editText.getText().toString());
+                    }
                 }
             });
 
@@ -55,10 +62,10 @@ public class MyActivity extends Activity {
                         editText.setError("between 0 and 255");
                     } else {
                         editText.setError(null);
-                        int edtViewIndex = layoutIpAddr.indexOfChild(editText);
-
+                        Log.d("TextChange", editText.getText().toString());
                         // shift focus to the next editText which is not the last one
-                        if (editText.getText().toString().length() == 3 && edtViewIndex < layoutIpAddr.getChildCount() - 1) {
+                        int edtViewIndex = layoutIpAddr.indexOfChild(editText);
+                        if (editText.getText().toString().length() == 3 && edtViewIndex < layoutIpAddr.getChildCount() - 1 && editText.isFocused()) {
                             layoutIpAddr.getChildAt(edtViewIndex + 2).requestFocus();
                         }
                     }
@@ -122,6 +129,7 @@ public class MyActivity extends Activity {
 
     public void onClearButtonClick(View v) {
         setIPAddrToGUI(CLEAR_IP);
+        edtTextIpAddrChunk1.requestFocus();
     }
 
     public void onResetButtonClick(View v) {
