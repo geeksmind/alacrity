@@ -83,7 +83,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/set_default"
-            android:id="@+id/buttonSetAsDefault" android:layout_marginTop="15dp"/>
+            android:id="@+id/buttonSetAsDefault" android:layout_marginTop="15dp" android:onClick="onSetAsDefaultButtonClick"/>
     <RadioGroup
             android:layout_width="fill_parent"
             android:layout_height="wrap_content" android:layout_marginTop="20dp" android:id="@+id/radioGroupOptions">
