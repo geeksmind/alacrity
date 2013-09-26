@@ -1,4 +1,4 @@
-package net.geeksmind.alacrity;
+package net.geeksmind.alacrity.console;
 
 import android.app.Activity;
 import android.content.SharedPreferences;
@@ -8,7 +8,8 @@ import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
 import android.widget.*;
-
+import net.geeksmind.alacrity.R;
+import net.geeksmind.alacrity.shieldComm.ShieldComm;
 
 public class MyActivity extends Activity {
 
@@ -29,6 +30,7 @@ public class MyActivity extends Activity {
     private RadioGroup cmdOptionsRadioGroup;
 
     //TODO: make ipChunkList manipulations generic
+
     //TODO: JSONObject and web communication
 
     public void addListenersToIpChunks(EditText... editTexts) {
@@ -39,7 +41,6 @@ public class MyActivity extends Activity {
                     // remove leading zeros
                     String ipChunkText = editText.getText().toString();
                     if (!editText.isFocused() && ipChunkText.matches("(0{2}\\d|0\\d|0\\d{2})")) { // when editText lose focus and has leading zeros
-                        //this setText will invoke focus shifting again, but this time the test will not pass.
                         editText.setText(ipChunkText.replaceFirst("^0+(?!$)", ""));
                         Log.d("FocusChange", editText.getText().toString());
                     }
@@ -167,8 +168,11 @@ public class MyActivity extends Activity {
         int cmdOptionIndex = cmdOptionsRadioGroup.indexOfChild(cmdRadioButton);
         String msg = "Send to : " + getIPAddrFromGUI() + " , with cmd : " + cmdOptionIndex;
 
-        Toast toast = Toast.makeText(this.getApplicationContext(), msg, Toast.LENGTH_SHORT);
+        String m = ShieldComm.syncArduino("http://www.dotabuff.com");
+        Log.d("SYNC", "received msg = " + m);
+        Toast toast = Toast.makeText(this.getApplicationContext(), m, Toast.LENGTH_SHORT);
         toast.show();
+
     }
 
     public String makeString(String[] origin, String delimiter) {
