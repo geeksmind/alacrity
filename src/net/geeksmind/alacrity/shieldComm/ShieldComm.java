@@ -7,11 +7,8 @@ package net.geeksmind.alacrity.shieldComm;
  */
 public class ShieldComm {
 
-//    public static String syncArduino(String url) {
-//        HttpGetTask syncArduinoTask = (HttpGetTask) new HttpGetTask().execute(url);
-//        return HttpGetTask.getMsgRcv();
-//
-//        (new HttpGetTask().execute(url));
-//    }
+    public static void syncArduino(OnTaskCompleted listener, String ipAddr) {
+        new HttpGetTask(listener).execute(ipAddr);
+    }
 
 }

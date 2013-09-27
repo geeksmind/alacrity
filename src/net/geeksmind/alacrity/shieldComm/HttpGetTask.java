@@ -37,11 +37,11 @@ public class HttpGetTask extends AsyncTask<String, Void, String> {
         }
     }
 
-    private String getInfo(String url) throws IOException {
+    private String getInfo(String ipAdd) throws IOException {
         HttpClient Client = new DefaultHttpClient();
 
         // Create Request to server and get response
-        HttpGet httpget = new HttpGet(url);
+        HttpGet httpget = new HttpGet("http://" + ipAdd);
         HttpResponse response = Client.execute(httpget);
 
         // Get status code

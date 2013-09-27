@@ -8,18 +8,19 @@ import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.*;
 import net.geeksmind.alacrity.R;
-import net.geeksmind.alacrity.shieldComm.HttpGetTask;
 import net.geeksmind.alacrity.shieldComm.OnTaskCompleted;
+import net.geeksmind.alacrity.shieldComm.ShieldComm;
 
 public class consoleActivity extends Activity {
 
     // Constants
     private static final String CLEAR_IP = " . . . ";
-    private static final String DEFAULT_IP = "192.168.0.1";
+    private static final String DEFAULT_PREF_IP = "192.168.0.1";
     private static final String PREFS_NAME = "PrefsFile";
     private static final String DEFAULT_IP_ADDR_KEY = "defaultIpAddr";
     private static final String OPENING_IP_ADDR_KEY = "openingIpAddr";
@@ -35,11 +36,9 @@ public class consoleActivity extends Activity {
     private EditText edtTextIpAddrChunk3;
     private EditText edtTextIpAddrChunk4;
     private RadioGroup cmdOptionsRadioGroup;
-
-    //TODO: make ipChunkList manipulations generic
+    private LinearLayout layoutIpAddr;
 
     //TODO: JSONObject and web communication
-
 
     /**
      * Called when the activity is first created.
@@ -60,11 +59,12 @@ public class consoleActivity extends Activity {
         edtTextIpAddrChunk3 = (EditText) this.findViewById(R.id.editViewIpAddr3);
         edtTextIpAddrChunk4 = (EditText) this.findViewById(R.id.editViewIpAddr4);
         cmdOptionsRadioGroup = (RadioGroup) this.findViewById(R.id.radioGroupOptions);
-
+        layoutIpAddr = (LinearLayout) this.findViewById(R.id.linearLayoutIpChunkList);
         // make <light on> as default
         cmdOptionsRadioGroup.check(R.id.radioButtonOn);
 
         addListenersToIpChunks(edtTextIpAddrChunk1, edtTextIpAddrChunk2, edtTextIpAddrChunk3, edtTextIpAddrChunk4);
+//        setPrefIpAddr(OPENING_IP_ADDR_KEY, getIPAddrFromGUI());
         setIPAddrToGUI(getPrefIpAddr(OPENING_IP_ADDR_KEY));
 
         clearButton.setOnClickListener(new View.OnClickListener() {
@@ -72,6 +72,9 @@ public class consoleActivity extends Activity {
             public void onClick(View v) {
                 setIPAddrToGUI(CLEAR_IP);
                 edtTextIpAddrChunk1.requestFocus();
+                // show soft keyboard for first IP seg, when cleanButton pushed
+                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                imm.showSoftInput(edtTextIpAddrChunk1, InputMethodManager.SHOW_IMPLICIT);
             }
         });
 
@@ -79,6 +82,10 @@ public class consoleActivity extends Activity {
             @Override
             public void onClick(View v) {
                 setIPAddrToGUI(getPrefIpAddr(DEFAULT_IP_ADDR_KEY));
+                edtTextIpAddrChunk1.requestFocus();
+                // hide soft keyboard for first IP seg, when resetButton pushed
+                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                imm.hideSoftInputFromWindow(edtTextIpAddrChunk1.getWindowToken(), 0);
             }
         });
 
@@ -95,17 +102,17 @@ public class consoleActivity extends Activity {
         syncButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String url = getIPAddrFromGUI();
+                String ipAddr = getIPAddrFromGUI();
 
                 ConnectivityManager connMgr = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
                 NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
                 if (networkInfo != null && networkInfo.isConnected()) {
-                    new HttpGetTask(new OnTaskCompleted() {
+                    ShieldComm.syncArduino(new OnTaskCompleted() {
                         @Override
                         public void onTaskCompleted(String res) {
                             showToast(res);
                         }
-                    }).execute("http://" + url);
+                    }, ipAddr);
                 } else {
                     showToast("No available network");
                 }
@@ -130,16 +137,36 @@ public class consoleActivity extends Activity {
         setPrefIpAddr(OPENING_IP_ADDR_KEY, getIPAddrFromGUI());
     }
 
+    EditText currentEditText = null;
+
     public void addListenersToIpChunks(EditText... editTexts) {
+
         for (final EditText editText : editTexts) {
+
+            // ip seg focus shifting
+            editText.setOnKeyListener(new View.OnKeyListener() {
+                @Override
+                public boolean onKey(View v, int keyCode, KeyEvent event) {
+                    switch (keyCode) {
+                        case KeyEvent.KEYCODE_ENTER:
+                            int edtViewIndex = layoutIpAddr.indexOfChild(editText);
+                            // shift focus to the next editText which is not the last one
+                            if (edtViewIndex < layoutIpAddr.getChildCount() - 1 && editText == currentEditText) {
+                                layoutIpAddr.getChildAt(edtViewIndex + 2).requestFocus();
+                            }
+                            return true;
+                    }
+                    return false;
+                }
+            });
+
+            // remove leading zeros when focus changes
             editText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
                 @Override
                 public void onFocusChange(View v, boolean hasFocus) {
-                    // remove leading zeros
                     String ipChunkText = editText.getText().toString();
                     if (!editText.isFocused() && ipChunkText.matches("(0{2}\\d|0\\d|0\\d{2})")) { // when editText lose focus and has leading zeros
                         editText.setText(ipChunkText.replaceFirst("^0+(?!$)", ""));
-                        Log.d("FocusChange", editText.getText().toString());
                     }
                 }
             });
@@ -152,7 +179,7 @@ public class consoleActivity extends Activity {
 
                 @Override
                 public void onTextChanged(CharSequence s, int start, int before, int count) {
-
+                    currentEditText = editText;
                     // ipChunk local check, show error when the ipChunk is invalid
                     if (!isIPChunkValid(editText.getText().toString())) {
                         editText.setError("between 0 and 255");
@@ -183,7 +210,7 @@ public class consoleActivity extends Activity {
 
     public String getPrefIpAddr(String prefKey) {
         SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
-        return settings.getString(prefKey, DEFAULT_IP);
+        return settings.getString(prefKey, DEFAULT_PREF_IP);
     }
 
     public void setPrefIpAddr(String prefKey, String ip) {
