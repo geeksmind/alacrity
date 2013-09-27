@@ -1,7 +1,10 @@
 package net.geeksmind.alacrity.console;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.SharedPreferences;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -9,19 +12,23 @@ import android.util.Log;
 import android.view.View;
 import android.widget.*;
 import net.geeksmind.alacrity.R;
-import net.geeksmind.alacrity.shieldComm.ShieldComm;
+import net.geeksmind.alacrity.shieldComm.HttpGetTask;
+import net.geeksmind.alacrity.shieldComm.OnTaskCompleted;
 
-public class MyActivity extends Activity {
+public class consoleActivity extends Activity {
 
     // Constants
     private static final String CLEAR_IP = " . . . ";
     private static final String DEFAULT_IP = "192.168.0.1";
-    public static final String PREFS_NAME = "PrefsFile";
-    public static final String DEFAULT_IP_ADDR_KEY = "defaultIpAddr";
-    public static final String OPENING_IP_ADDR_KEY = "openingIpAddr";
+    private static final String PREFS_NAME = "PrefsFile";
+    private static final String DEFAULT_IP_ADDR_KEY = "defaultIpAddr";
+    private static final String OPENING_IP_ADDR_KEY = "openingIpAddr";
 
     // GUI Widgets
+    private Button clearButton;
+    private Button resetButton;
     private Button setAsDefaultButton;
+    private Button syncButton;
     private Button emitButton;
     private EditText edtTextIpAddrChunk1;
     private EditText edtTextIpAddrChunk2;
@@ -32,6 +39,96 @@ public class MyActivity extends Activity {
     //TODO: make ipChunkList manipulations generic
 
     //TODO: JSONObject and web communication
+
+
+    /**
+     * Called when the activity is first created.
+     */
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.main);
+
+
+        syncButton = (Button) this.findViewById(R.id.buttonSync);
+        clearButton = (Button) this.findViewById(R.id.buttonClear);
+        resetButton = (Button) this.findViewById(R.id.buttonReset);
+        emitButton = (Button) this.findViewById(R.id.buttonEmit);
+        setAsDefaultButton = (Button) this.findViewById(R.id.buttonSetAsDefault);
+        edtTextIpAddrChunk1 = (EditText) this.findViewById(R.id.editViewIpAddr1);
+        edtTextIpAddrChunk2 = (EditText) this.findViewById(R.id.editViewIpAddr2);
+        edtTextIpAddrChunk3 = (EditText) this.findViewById(R.id.editViewIpAddr3);
+        edtTextIpAddrChunk4 = (EditText) this.findViewById(R.id.editViewIpAddr4);
+        cmdOptionsRadioGroup = (RadioGroup) this.findViewById(R.id.radioGroupOptions);
+
+        // make <light on> as default
+        cmdOptionsRadioGroup.check(R.id.radioButtonOn);
+
+        addListenersToIpChunks(edtTextIpAddrChunk1, edtTextIpAddrChunk2, edtTextIpAddrChunk3, edtTextIpAddrChunk4);
+        setIPAddrToGUI(getPrefIpAddr(OPENING_IP_ADDR_KEY));
+
+        clearButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                setIPAddrToGUI(CLEAR_IP);
+                edtTextIpAddrChunk1.requestFocus();
+            }
+        });
+
+        resetButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                setIPAddrToGUI(getPrefIpAddr(DEFAULT_IP_ADDR_KEY));
+            }
+        });
+
+        setAsDefaultButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String ipAddr = getIPAddrFromGUI();
+                setPrefIpAddr(DEFAULT_IP_ADDR_KEY, ipAddr);
+                String msg = "Default IPAddr is set to " + ipAddr;
+                showToast(msg);
+            }
+        });
+
+        syncButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String url = getIPAddrFromGUI();
+
+                ConnectivityManager connMgr = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+                NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
+                if (networkInfo != null && networkInfo.isConnected()) {
+                    new HttpGetTask(new OnTaskCompleted() {
+                        @Override
+                        public void onTaskCompleted(String res) {
+                            showToast(res);
+                        }
+                    }).execute("http://" + url);
+                } else {
+                    showToast("No available network");
+                }
+            }
+        });
+
+        emitButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int checkRadioButtonId = cmdOptionsRadioGroup.getCheckedRadioButtonId();
+                RadioButton cmdRadioButton = (RadioButton) cmdOptionsRadioGroup.findViewById(checkRadioButtonId);
+                int cmdOptionIndex = cmdOptionsRadioGroup.indexOfChild(cmdRadioButton);
+                String msg = "Send to : " + getIPAddrFromGUI() + " , with cmd : " + cmdOptionIndex;
+                showToast(msg);
+            }
+        });
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        setPrefIpAddr(OPENING_IP_ADDR_KEY, getIPAddrFromGUI());
+    }
 
     public void addListenersToIpChunks(EditText... editTexts) {
         for (final EditText editText : editTexts) {
@@ -79,33 +176,9 @@ public class MyActivity extends Activity {
         }
     }
 
-    /**
-     * Called when the activity is first created.
-     */
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.main);
-
-        emitButton = (Button) this.findViewById(R.id.buttonEmit);
-        setAsDefaultButton = (Button) this.findViewById(R.id.buttonSetAsDefault);
-        edtTextIpAddrChunk1 = (EditText) this.findViewById(R.id.editViewIpAddr1);
-        edtTextIpAddrChunk2 = (EditText) this.findViewById(R.id.editViewIpAddr2);
-        edtTextIpAddrChunk3 = (EditText) this.findViewById(R.id.editViewIpAddr3);
-        edtTextIpAddrChunk4 = (EditText) this.findViewById(R.id.editViewIpAddr4);
-        cmdOptionsRadioGroup = (RadioGroup) this.findViewById(R.id.radioGroupOptions);
-
-        // make <light on> as default
-        cmdOptionsRadioGroup.check(R.id.radioButtonOn);
-
-        addListenersToIpChunks(edtTextIpAddrChunk1, edtTextIpAddrChunk2, edtTextIpAddrChunk3, edtTextIpAddrChunk4);
-        setIPAddrToGUI(getPrefIpAddr(OPENING_IP_ADDR_KEY));
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        setPrefIpAddr(OPENING_IP_ADDR_KEY, getIPAddrFromGUI());
+    public void showToast(String msg) {
+        Toast toast = Toast.makeText(consoleActivity.this.getApplicationContext(), msg, Toast.LENGTH_SHORT);
+        toast.show();
     }
 
     public String getPrefIpAddr(String prefKey) {
@@ -139,40 +212,6 @@ public class MyActivity extends Activity {
         edtTextIpAddrChunk2.setText(ipChunkList[1].trim());
         edtTextIpAddrChunk3.setText(ipChunkList[2].trim());
         edtTextIpAddrChunk4.setText(ipChunkList[3].trim());  // remove spaces for Int parsing
-    }
-
-    @SuppressWarnings("UnusedParameters")
-    public void onClearButtonClick(View v) {
-        setIPAddrToGUI(CLEAR_IP);
-        edtTextIpAddrChunk1.requestFocus();
-    }
-
-    @SuppressWarnings("UnusedParameters")
-    public void onResetButtonClick(View v) {
-        setIPAddrToGUI(getPrefIpAddr(DEFAULT_IP_ADDR_KEY));
-    }
-
-    @SuppressWarnings("UnusedParameters")
-    public void onSetAsDefaultButtonClick(View v) {
-        String ipAddr = getIPAddrFromGUI();
-        setPrefIpAddr(DEFAULT_IP_ADDR_KEY, ipAddr);
-        String msg = "Default IPAddr is set to " + ipAddr;
-        Toast toast = Toast.makeText(this.getApplicationContext(), msg, Toast.LENGTH_SHORT);
-        toast.show();
-    }
-
-    @SuppressWarnings("UnusedParameters")
-    public void onEmitButtonClick(View v) {
-        int checkRadioButtonId = cmdOptionsRadioGroup.getCheckedRadioButtonId();
-        RadioButton cmdRadioButton = (RadioButton) cmdOptionsRadioGroup.findViewById(checkRadioButtonId);
-        int cmdOptionIndex = cmdOptionsRadioGroup.indexOfChild(cmdRadioButton);
-        String msg = "Send to : " + getIPAddrFromGUI() + " , with cmd : " + cmdOptionIndex;
-
-        String m = ShieldComm.syncArduino("http://www.dotabuff.com");
-        Log.d("SYNC", "received msg = " + m);
-        Toast toast = Toast.makeText(this.getApplicationContext(), m, Toast.LENGTH_SHORT);
-        toast.show();
-
     }
 
     public String makeString(String[] origin, String delimiter) {
@@ -212,4 +251,6 @@ public class MyActivity extends Activity {
         }
         return true;
     }
+
+
 }

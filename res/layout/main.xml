@@ -71,19 +71,19 @@
         <Button
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/clear"  android:onClick="onClearButtonClick"
+                android:text="@string/clear"
                 android:id="@+id/buttonClear" android:layout_weight="1"/>
         <Button
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/reset"  android:onClick="onResetButtonClick"
+                android:text="@string/reset"
                 android:id="@+id/buttonReset" android:layout_weight="1"/>
     </LinearLayout>
     <Button
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/set_default"
-            android:id="@+id/buttonSetAsDefault" android:layout_marginTop="15dp" android:onClick="onSetAsDefaultButtonClick"/>
+            android:id="@+id/buttonSetAsDefault" android:layout_marginTop="15dp"/>
     <RadioGroup
             android:layout_width="fill_parent"
             android:layout_height="wrap_content" android:layout_marginTop="20dp" android:id="@+id/radioGroupOptions">
@@ -101,7 +101,14 @@
     <Button
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
+            android:text="@string/sync"
+            android:id="@+id/buttonSync" android:layout_marginTop="20dp"
+            android:enabled="true"/>
+    <Button
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
             android:text="@string/emit"
             android:id="@+id/buttonEmit" android:layout_marginTop="20dp"
-            android:enabled="true" android:onClick="onEmitButtonClick"/>
+            android:enabled="true"/>
+
 </LinearLayout>
