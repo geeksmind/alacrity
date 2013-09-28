@@ -40,4 +40,12 @@ public class Device {
         return pin;
     }
 
+    public String getName(){
+        return name;
+    }
+
+    public String getType(){
+        return type;
+    }
+
 }

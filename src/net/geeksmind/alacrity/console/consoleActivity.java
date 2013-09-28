@@ -27,6 +27,11 @@ public class consoleActivity extends Activity {
     private static final String PREFS_NAME = "PrefsFile";
     private static final String DEFAULT_IP_ADDR_KEY = "defaultIpAddr";
     private static final String OPENING_IP_ADDR_KEY = "openingIpAddr";
+    private static final String JSON_ERROR_MSG = "JSONObject paring error occurs";
+    private static final String NETWORK_NOT_AVAILABLE_ERROR_MSG = "No available network";
+    private static final String NETWORK_CONNECTION_ERROR_MSG = "Failed to connect";
+    private static final String IP_SEGMENT_ERROR = "between 0 and 255";
+
 
     // GUI Widgets
     private Button clearButton;
@@ -38,11 +43,13 @@ public class consoleActivity extends Activity {
     private EditText edtTextIpAddrChunk2;
     private EditText edtTextIpAddrChunk3;
     private EditText edtTextIpAddrChunk4;
+    private TextView statusContent;
     private RadioGroup cmdOptionsRadioGroup;
     private LinearLayout layoutIpAddr;
 
     // Device
     private Device dvc;
+    private String syncIP = null;
 
     //TODO: process device lists
 
@@ -66,6 +73,7 @@ public class consoleActivity extends Activity {
         edtTextIpAddrChunk4 = (EditText) this.findViewById(R.id.editViewIpAddr4);
         cmdOptionsRadioGroup = (RadioGroup) this.findViewById(R.id.radioGroupOptions);
         layoutIpAddr = (LinearLayout) this.findViewById(R.id.linearLayoutIpChunkList);
+        statusContent = (TextView) this.findViewById(R.id.textViewStatusContent);
 
         addListenersToIpChunks(edtTextIpAddrChunk1, edtTextIpAddrChunk2, edtTextIpAddrChunk3, edtTextIpAddrChunk4);
         setIPAddrToGUI(getPrefIpAddr(OPENING_IP_ADDR_KEY));
@@ -105,7 +113,8 @@ public class consoleActivity extends Activity {
         syncButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String url = "http://" + getIPAddrFromGUI();
+                final String guiIpAddr = getIPAddrFromGUI();
+                String url = "http://" + guiIpAddr;
 
                 ConnectivityManager connMgr = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
                 NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
@@ -113,16 +122,28 @@ public class consoleActivity extends Activity {
                     ShieldComm.syncArduino(new OnTaskCompleted() {
                         @Override
                         public void onTaskCompleted(String res) {
-                            try {
-                                dvc = new Device(new JSONObject(res));
-                                showToast(dvc.toString());
-                            } catch (JSONException e) {
-                                showToast("JSONObject paring error occurs");
+                            if (res.startsWith("ERROR")) {
+                                showToast(NETWORK_CONNECTION_ERROR_MSG + " : " + guiIpAddr + "\nERROR CODE = " + res.split(":")[1]);
+                                syncFailAction();
+                            } else {
+                                try {
+                                    dvc = new Device(new JSONObject(res));
+                                    syncIP = guiIpAddr;  // this code will not be reached if any errors occur
+                                    emitButton.setEnabled(true);
+                                    statusContent.setText("Sync to " + syncIP
+                                            + " \nDevice = " + dvc.getName() + "(" + dvc.getType() + ", " + dvc.getPin() + ")");
+                                    showToast(dvc.toString());
+
+                                } catch (JSONException e) {
+                                    showToast(JSON_ERROR_MSG);
+                                    syncFailAction();
+                                }
                             }
                         }
                     }, url);
                 } else {
-                    showToast("No available network");
+                    showToast(NETWORK_NOT_AVAILABLE_ERROR_MSG);
+                    syncFailAction();
                 }
             }
         });
@@ -133,8 +154,7 @@ public class consoleActivity extends Activity {
                 int checkRadioButtonId = cmdOptionsRadioGroup.getCheckedRadioButtonId();
                 RadioButton cmdRadioButton = (RadioButton) cmdOptionsRadioGroup.findViewById(checkRadioButtonId);
                 int cmdOptionIndex = cmdOptionsRadioGroup.indexOfChild(cmdRadioButton);
-//                String msg = "Send to : " + getIPAddrFromGUI() + " , with cmd : " + cmdOptionIndex;
-                String msg = getIPAddrFromGUI() + "/?out=" + dvc.getPin() + "&status=" + cmdOptionIndex;
+                String msg = syncIP + "/?pin=" + dvc.getPin() + "&status=" + cmdOptionIndex;
                 showToast(msg);
             }
         });
@@ -146,6 +166,8 @@ public class consoleActivity extends Activity {
         setPrefIpAddr(OPENING_IP_ADDR_KEY, getIPAddrFromGUI());
     }
 
+
+    // only for focus shifting
     EditText currentEditText = null;
 
     public void addListenersToIpChunks(EditText... editTexts) {
@@ -191,7 +213,7 @@ public class consoleActivity extends Activity {
                     currentEditText = editText;
                     // ipChunk local check, show error when the ipChunk is invalid
                     if (!isIPChunkValid(editText.getText().toString())) {
-                        editText.setError("between 0 and 255");
+                        editText.setError(IP_SEGMENT_ERROR);
                     } else {
                         editText.setError(null);
                     }
@@ -210,6 +232,11 @@ public class consoleActivity extends Activity {
                 }
             });
         }
+    }
+
+    public void syncFailAction() {
+        statusContent.setText(R.string.default_status);
+        emitButton.setEnabled(false);
     }
 
     public void showToast(String msg) {
@@ -234,7 +261,7 @@ public class consoleActivity extends Activity {
 
     public void setButtonsEnable(boolean enable) {
         setAsDefaultButton.setEnabled(enable);
-        emitButton.setEnabled(enable);
+        syncButton.setEnabled(enable);
     }
 
     public boolean isExistGUIErrors() {
