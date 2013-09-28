@@ -13,8 +13,11 @@ import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.*;
 import net.geeksmind.alacrity.R;
+import net.geeksmind.alacrity.component.Device;
 import net.geeksmind.alacrity.shieldComm.OnTaskCompleted;
 import net.geeksmind.alacrity.shieldComm.ShieldComm;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class consoleActivity extends Activity {
 
@@ -38,7 +41,10 @@ public class consoleActivity extends Activity {
     private RadioGroup cmdOptionsRadioGroup;
     private LinearLayout layoutIpAddr;
 
-    //TODO: JSONObject and web communication
+    // Device
+    private Device dvc;
+
+    //TODO: process device lists
 
     /**
      * Called when the activity is first created.
@@ -60,11 +66,8 @@ public class consoleActivity extends Activity {
         edtTextIpAddrChunk4 = (EditText) this.findViewById(R.id.editViewIpAddr4);
         cmdOptionsRadioGroup = (RadioGroup) this.findViewById(R.id.radioGroupOptions);
         layoutIpAddr = (LinearLayout) this.findViewById(R.id.linearLayoutIpChunkList);
-        // make <light on> as default
-        cmdOptionsRadioGroup.check(R.id.radioButtonOn);
 
         addListenersToIpChunks(edtTextIpAddrChunk1, edtTextIpAddrChunk2, edtTextIpAddrChunk3, edtTextIpAddrChunk4);
-//        setPrefIpAddr(OPENING_IP_ADDR_KEY, getIPAddrFromGUI());
         setIPAddrToGUI(getPrefIpAddr(OPENING_IP_ADDR_KEY));
 
         clearButton.setOnClickListener(new View.OnClickListener() {
@@ -102,7 +105,7 @@ public class consoleActivity extends Activity {
         syncButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String ipAddr = getIPAddrFromGUI();
+                String url = "http://" + getIPAddrFromGUI();
 
                 ConnectivityManager connMgr = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
                 NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
@@ -110,9 +113,14 @@ public class consoleActivity extends Activity {
                     ShieldComm.syncArduino(new OnTaskCompleted() {
                         @Override
                         public void onTaskCompleted(String res) {
-                            showToast(res);
+                            try {
+                                dvc = new Device(new JSONObject(res));
+                                showToast(dvc.toString());
+                            } catch (JSONException e) {
+                                showToast("JSONObject paring error occurs");
+                            }
                         }
-                    }, ipAddr);
+                    }, url);
                 } else {
                     showToast("No available network");
                 }
@@ -125,7 +133,8 @@ public class consoleActivity extends Activity {
                 int checkRadioButtonId = cmdOptionsRadioGroup.getCheckedRadioButtonId();
                 RadioButton cmdRadioButton = (RadioButton) cmdOptionsRadioGroup.findViewById(checkRadioButtonId);
                 int cmdOptionIndex = cmdOptionsRadioGroup.indexOfChild(cmdRadioButton);
-                String msg = "Send to : " + getIPAddrFromGUI() + " , with cmd : " + cmdOptionIndex;
+//                String msg = "Send to : " + getIPAddrFromGUI() + " , with cmd : " + cmdOptionIndex;
+                String msg = getIPAddrFromGUI() + "/?out=" + dvc.getPin() + "&status=" + cmdOptionIndex;
                 showToast(msg);
             }
         });
@@ -278,6 +287,4 @@ public class consoleActivity extends Activity {
         }
         return true;
     }
-
-
 }

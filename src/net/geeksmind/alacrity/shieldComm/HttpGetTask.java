@@ -19,8 +19,8 @@ import java.util.List;
  * Time: 10:57 PM
  */
 public class HttpGetTask extends AsyncTask<String, Void, String> {
-    static private int statusCode = 0;
-    static private String msgRcv = "";
+    private int statusCode = 0;
+    private String msgRcv = "";
 
     private OnTaskCompleted listener;
 
@@ -37,11 +37,11 @@ public class HttpGetTask extends AsyncTask<String, Void, String> {
         }
     }
 
-    private String getInfo(String ipAdd) throws IOException {
+    private String getInfo(String url) throws IOException {
         HttpClient Client = new DefaultHttpClient();
 
         // Create Request to server and get response
-        HttpGet httpget = new HttpGet("http://" + ipAdd);
+        HttpGet httpget = new HttpGet(url);
         HttpResponse response = Client.execute(httpget);
 
         // Get status code

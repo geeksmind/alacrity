@@ -6,9 +6,7 @@ package net.geeksmind.alacrity.shieldComm;
  * Time: 11:34 PM
  */
 public class ShieldComm {
-
     public static void syncArduino(OnTaskCompleted listener, String ipAddr) {
         new HttpGetTask(listener).execute(ipAddr);
     }
-
 }
