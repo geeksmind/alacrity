@@ -1,7 +1,8 @@
-package net.geeksmind.alacrity.console;
+package net.geeksmind.alacrity.sync;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -14,12 +15,13 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.*;
 import net.geeksmind.alacrity.R;
 import net.geeksmind.alacrity.component.Device;
+import net.geeksmind.alacrity.console.ConsoleActivity;
 import net.geeksmind.alacrity.shieldComm.OnTaskCompleted;
 import net.geeksmind.alacrity.shieldComm.ShieldComm;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class consoleActivity extends Activity {
+public class SyncActivity extends Activity {
 
     // Constants
     private static final String CLEAR_IP = " . . . ";
@@ -38,13 +40,10 @@ public class consoleActivity extends Activity {
     private Button resetButton;
     private Button setAsDefaultButton;
     private Button syncButton;
-    private Button emitButton;
     private EditText edtTextIpAddrChunk1;
     private EditText edtTextIpAddrChunk2;
     private EditText edtTextIpAddrChunk3;
     private EditText edtTextIpAddrChunk4;
-    private TextView statusContent;
-    private RadioGroup cmdOptionsRadioGroup;
     private LinearLayout layoutIpAddr;
 
     // Device
@@ -59,21 +58,19 @@ public class consoleActivity extends Activity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.main);
+        setContentView(R.layout.sync);
 
 
         syncButton = (Button) this.findViewById(R.id.buttonSync);
         clearButton = (Button) this.findViewById(R.id.buttonClear);
         resetButton = (Button) this.findViewById(R.id.buttonReset);
-        emitButton = (Button) this.findViewById(R.id.buttonEmit);
         setAsDefaultButton = (Button) this.findViewById(R.id.buttonSetAsDefault);
         edtTextIpAddrChunk1 = (EditText) this.findViewById(R.id.editViewIpAddr1);
         edtTextIpAddrChunk2 = (EditText) this.findViewById(R.id.editViewIpAddr2);
         edtTextIpAddrChunk3 = (EditText) this.findViewById(R.id.editViewIpAddr3);
         edtTextIpAddrChunk4 = (EditText) this.findViewById(R.id.editViewIpAddr4);
-        cmdOptionsRadioGroup = (RadioGroup) this.findViewById(R.id.radioGroupOptions);
         layoutIpAddr = (LinearLayout) this.findViewById(R.id.linearLayoutIpChunkList);
-        statusContent = (TextView) this.findViewById(R.id.textViewStatusContent);
+
 
         addListenersToIpChunks(edtTextIpAddrChunk1, edtTextIpAddrChunk2, edtTextIpAddrChunk3, edtTextIpAddrChunk4);
         setIPAddrToGUI(getPrefIpAddr(OPENING_IP_ADDR_KEY));
@@ -124,40 +121,24 @@ public class consoleActivity extends Activity {
                         public void onTaskCompleted(String res) {
                             if (res.startsWith("ERROR")) {
                                 showToast(NETWORK_CONNECTION_ERROR_MSG + " : " + guiIpAddr + "\nERROR CODE = " + res.split(":")[1]);
-                                syncFailAction();
                             } else {
                                 try {
                                     dvc = new Device(new JSONObject(res));
-                                    syncIP = guiIpAddr;  // this code will not be reached if any errors occur
-                                    emitButton.setEnabled(true);
-                                    statusContent.setText("Sync to " + syncIP
-                                            + " \nDevice = " + dvc.getName() + "(" + dvc.getType() + ", " + dvc.getPin() + ")");
                                     showToast(dvc.toString());
-
+                                    goToConsole();
                                 } catch (JSONException e) {
                                     showToast(JSON_ERROR_MSG);
-                                    syncFailAction();
                                 }
                             }
                         }
                     }, url);
                 } else {
                     showToast(NETWORK_NOT_AVAILABLE_ERROR_MSG);
-                    syncFailAction();
                 }
             }
         });
 
-        emitButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                int checkRadioButtonId = cmdOptionsRadioGroup.getCheckedRadioButtonId();
-                RadioButton cmdRadioButton = (RadioButton) cmdOptionsRadioGroup.findViewById(checkRadioButtonId);
-                int cmdOptionIndex = cmdOptionsRadioGroup.indexOfChild(cmdRadioButton);
-                String msg = syncIP + "/?pin=" + dvc.getPin() + "&status=" + cmdOptionIndex;
-                showToast(msg);
-            }
-        });
+
     }
 
     @Override
@@ -234,13 +215,13 @@ public class consoleActivity extends Activity {
         }
     }
 
-    public void syncFailAction() {
-        statusContent.setText(R.string.default_status);
-        emitButton.setEnabled(false);
+    public void goToConsole() {
+        Intent intentEdit = new Intent(SyncActivity.this, ConsoleActivity.class);
+        startActivity(intentEdit);
     }
 
     public void showToast(String msg) {
-        Toast toast = Toast.makeText(consoleActivity.this.getApplicationContext(), msg, Toast.LENGTH_SHORT);
+        Toast toast = Toast.makeText(SyncActivity.this.getApplicationContext(), msg, Toast.LENGTH_SHORT);
         toast.show();
     }
 
