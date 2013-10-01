@@ -14,6 +14,7 @@ import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.*;
 import net.geeksmind.alacrity.R;
+import net.geeksmind.alacrity.component.ArduinoBoard;
 import net.geeksmind.alacrity.component.Device;
 import net.geeksmind.alacrity.console.ConsoleActivity;
 import net.geeksmind.alacrity.shieldComm.OnTaskCompleted;
@@ -123,8 +124,8 @@ public class SyncActivity extends Activity {
                                 showToast(NETWORK_CONNECTION_ERROR_MSG + " : " + guiIpAddr + "\nERROR CODE = " + res.split(":")[1]);
                             } else {
                                 try {
-                                    dvc = new Device(new JSONObject(res));
-                                    showToast(dvc.toString());
+                                    ArduinoBoard.getInstance().init(res);
+                                    showToast(ArduinoBoard.getInstance().toString());
                                     goToConsole();
                                 } catch (JSONException e) {
                                     showToast(JSON_ERROR_MSG);
