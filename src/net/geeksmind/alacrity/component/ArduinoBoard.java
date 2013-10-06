@@ -20,7 +20,7 @@ public class ArduinoBoard {
     private static ArduinoBoard instance = null;
 
     public void setDevStatusByIndex(int i, boolean stat) {
-               deviceList.get(i).setStatus(stat);
+        deviceList.get(i).setStatus(stat);
     }
 
     public List<Device> getDeviceList() {
@@ -38,14 +38,25 @@ public class ArduinoBoard {
     }
 
     public void init(String json) throws JSONException {
+        deviceList.clear();
         JSONObject board = new JSONObject(json);
         ipAddr = board.getString("ip");
+
         JSONArray deviceArray = board.getJSONArray("devices");
         for (int i = 0; i < deviceArray.length(); i++) {
             Log.d("json", "json = " + new Device(deviceArray.getJSONObject(i)).toString());
             deviceList.add(new Device(deviceArray.getJSONObject(i)));
         }
-        Log.d("json", "dvc list leng = " + deviceList.size());
+    }
+
+    public String generateURL() {
+        String retVal = ipAddr + "/?";
+        for (Device dev : deviceList) {
+            retVal += "pin=" + dev.getPin() + "&";
+            retVal += "status=" + dev.getStatus() + "&";
+        }
+//        return "http://" + retVal.substring(0, retVal.length() - 1);
+        return "http://" + retVal.substring(0, retVal.length() - 1);
     }
 
     @Override

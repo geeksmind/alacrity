@@ -9,7 +9,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:id="@+id/devName"
-            android:textSize="15dp"
+            android:textSize="20dp"
             android:layout_alignParentTop="true"
             android:layout_alignParentLeft="true"
             />
@@ -22,14 +22,14 @@
             android:layout_alignParentBottom="false"
             android:layout_alignParentLeft="true"
             android:layout_below="@+id/devName"
-            />
+            android:alpha="0.5"/>
 
     <Switch
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:id="@+id/devSwitch"
             android:layout_alignParentTop="false"
-            android:layout_alignParentBottom="false"
+            android:layout_alignParentBottom="true"
             android:layout_alignParentRight="true"
             android:textOn="ON"
             android:textOff="OFF"/>

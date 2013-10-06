@@ -26,7 +26,7 @@ public class Device {
         this.status = status;
     }
 
-    public boolean isStatus() {
+    public boolean getStatus() {
         return status;
     }
 
@@ -61,5 +61,4 @@ public class Device {
     public String getType(){
         return type;
     }
-
 }

@@ -7,7 +7,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.*;
 import net.geeksmind.alacrity.R;
-import net.geeksmind.alacrity.component.ArduinoBoard;
 import net.geeksmind.alacrity.component.Device;
 
 import java.util.List;
@@ -53,18 +52,17 @@ class DevListAdaptor extends ArrayAdapter<Device> {
             holder.power.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                 @Override
                 public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                    ArduinoBoard.getInstance().setDevStatusByIndex(position, isChecked);
-                    Log.d("switch", "power = " + isChecked);
+                    deviceList.get(position).setStatus(isChecked);
                 }
             });
         } else {
             holder = (ViewHolder) convertView.getTag();
         }
 
-        Device dev = ArduinoBoard.getInstance().getDeviceList().get(position);
+        Device dev = deviceList.get(position);
         holder.name.setText(dev.getName());
-        holder.info.setText(dev.getType() + " on pin " + dev.getPin());
-        holder.power.setChecked(dev.isStatus());
+        holder.info.setText(dev.getType() + " - pin " + dev.getPin());
+        holder.power.setChecked(dev.getStatus());
         Log.d("item", dev.toString());
 
         return convertView;

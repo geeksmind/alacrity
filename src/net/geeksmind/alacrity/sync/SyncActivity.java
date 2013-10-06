@@ -15,12 +15,10 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.*;
 import net.geeksmind.alacrity.R;
 import net.geeksmind.alacrity.component.ArduinoBoard;
-import net.geeksmind.alacrity.component.Device;
 import net.geeksmind.alacrity.console.ConsoleActivity;
 import net.geeksmind.alacrity.shieldComm.OnTaskCompleted;
 import net.geeksmind.alacrity.shieldComm.ShieldComm;
 import org.json.JSONException;
-import org.json.JSONObject;
 
 public class SyncActivity extends Activity {
 
@@ -46,12 +44,6 @@ public class SyncActivity extends Activity {
     private EditText edtTextIpAddrChunk3;
     private EditText edtTextIpAddrChunk4;
     private LinearLayout layoutIpAddr;
-
-    // Device
-    private Device dvc;
-    private String syncIP = null;
-
-    //TODO: process device lists
 
     /**
      * Called when the activity is first created.
@@ -138,8 +130,6 @@ public class SyncActivity extends Activity {
                 }
             }
         });
-
-
     }
 
     @Override
@@ -149,7 +139,7 @@ public class SyncActivity extends Activity {
     }
 
 
-    // only for focus shifting
+    // hacking: only for focus shifting
     EditText currentEditText = null;
 
     public void addListenersToIpChunks(EditText... editTexts) {

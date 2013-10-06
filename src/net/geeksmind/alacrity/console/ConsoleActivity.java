@@ -7,6 +7,8 @@ import android.view.View;
 import android.widget.*;
 import net.geeksmind.alacrity.R;
 import net.geeksmind.alacrity.component.ArduinoBoard;
+import net.geeksmind.alacrity.shieldComm.OnTaskCompleted;
+import net.geeksmind.alacrity.shieldComm.ShieldComm;
 
 /**
  * Author: coderh
@@ -31,34 +33,25 @@ public class ConsoleActivity extends Activity {
         statusContent = (TextView) this.findViewById(R.id.textViewStatusContent);
         deviceListView = (ListView) this.findViewById(R.id.deviceListView);
 
-        statusContent.setText("Connected to " + ardBd.getIpAddr());
+        statusContent.setText("sync to " + ardBd.getIpAddr());
 
-        Log.d("item", "1");
         DevListAdaptor devAdapter = new DevListAdaptor(this, ardBd.getDeviceList());
-        Log.d("item", "2");
         deviceListView.setAdapter(devAdapter);
-        Log.d("item", "3");
 
-        emitButton.setEnabled(true);
         emitButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Toast toast = Toast.makeText(ConsoleActivity.this.getApplicationContext(), ardBd.toString(), Toast.LENGTH_SHORT);
+
+                String url = ardBd.generateURL();
+                Toast toast = Toast.makeText(ConsoleActivity.this.getApplicationContext(), url, Toast.LENGTH_SHORT);
                 toast.show();
-//                int checkRadioButtonId = cmdOptionsRadioGroup.getCheckedRadioButtonId();
-//                RadioButton cmdRadioButton = (RadioButton) cmdOptionsRadioGroup.findViewById(checkRadioButtonId);
-//                int cmdOptionIndex = cmdOptionsRadioGroup.indexOfChild(cmdRadioButton);
-//                String msg = syncIP + "/?pin=" + dvc.getPin() + "&status=" + cmdOptionIndex;
-//                showToast(msg);
+                ShieldComm.emitArduino(new OnTaskCompleted() {
+                    @Override
+                    public void onTaskCompleted(String res) {
+                        // TODO
+                    }
+                }, url);
             }
         });
-        Log.d("item", "4");
     }
-
-    public void syncFailAction() {
-        statusContent.setText(R.string.default_status);
-        emitButton.setEnabled(false);
-    }
-
-
 }
