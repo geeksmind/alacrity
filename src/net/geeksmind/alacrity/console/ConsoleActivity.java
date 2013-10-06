@@ -2,12 +2,11 @@ package net.geeksmind.alacrity.console;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
-import android.widget.Button;
-import android.widget.RadioButton;
-import android.widget.RadioGroup;
-import android.widget.TextView;
+import android.widget.*;
 import net.geeksmind.alacrity.R;
+import net.geeksmind.alacrity.component.ArduinoBoard;
 
 /**
  * Author: coderh
@@ -19,24 +18,33 @@ public class ConsoleActivity extends Activity {
     // GUI Widgets
     private Button emitButton;
     private TextView statusContent;
-    private RadioGroup cmdOptionsRadioGroup;
+    private ListView deviceListView;
+
+    // arduino board instance
+    private ArduinoBoard ardBd = ArduinoBoard.getInstance();
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.console);
 
         emitButton = (Button) this.findViewById(R.id.buttonEmit);
-        cmdOptionsRadioGroup = (RadioGroup) this.findViewById(R.id.radioGroupOptions);
         statusContent = (TextView) this.findViewById(R.id.textViewStatusContent);
-       /*
-        syncIP = guiIpAddr;  // this code will not be reached if any errors occur
+        deviceListView = (ListView) this.findViewById(R.id.deviceListView);
+
+        statusContent.setText("Connected to " + ardBd.getIpAddr());
+
+        Log.d("item", "1");
+        DevListAdaptor devAdapter = new DevListAdaptor(this, ardBd.getDeviceList());
+        Log.d("item", "2");
+        deviceListView.setAdapter(devAdapter);
+        Log.d("item", "3");
+
         emitButton.setEnabled(true);
-        statusContent.setText("Sync to " + syncIP
-                + " \nDevice = " + dvc.getName() + "(" + dvc.getType() + ", " + dvc.getPin() + ")");
-         */
         emitButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Toast toast = Toast.makeText(ConsoleActivity.this.getApplicationContext(), ardBd.toString(), Toast.LENGTH_SHORT);
+                toast.show();
 //                int checkRadioButtonId = cmdOptionsRadioGroup.getCheckedRadioButtonId();
 //                RadioButton cmdRadioButton = (RadioButton) cmdOptionsRadioGroup.findViewById(checkRadioButtonId);
 //                int cmdOptionIndex = cmdOptionsRadioGroup.indexOfChild(cmdRadioButton);
@@ -44,6 +52,7 @@ public class ConsoleActivity extends Activity {
 //                showToast(msg);
             }
         });
+        Log.d("item", "4");
     }
 
     public void syncFailAction() {

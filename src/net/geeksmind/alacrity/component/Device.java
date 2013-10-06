@@ -1,9 +1,7 @@
 package net.geeksmind.alacrity.component;
 
-import android.util.Log;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.json.JSONStringer;
 
 /**
  * Author: coderh
@@ -17,18 +15,34 @@ public class Device {
     private String type;
     private String name;
     private int pin;
+    private boolean status;
 
-    public Device(String tp, String nm, int p) {
-        type = tp;
-        name = nm;
-        pin = p;
+    public void setStatus(boolean status) {
+        try {
+            jsonObject.put("status", status);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        this.status = status;
     }
+
+    public boolean isStatus() {
+        return status;
+    }
+
+//    public Device(String type, String name, int pin, boolean status) {
+//        this.type = type;
+//        this.name = name;
+//        this.pin = pin;
+//        this.status = status;
+//    }
 
     public Device(JSONObject json) throws JSONException {
         jsonObject = json;
         type = jsonObject.getString("type");
         name = jsonObject.getString("name");
         pin = jsonObject.getInt("pin");
+        status = jsonObject.getBoolean("status");
     }
 
     @Override

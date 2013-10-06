@@ -14,15 +14,26 @@ import java.util.List;
  * Time: 11:24 PM
  */
 public class ArduinoBoard {
+
     private String ipAddr = "";
     private List<Device> deviceList = new ArrayList<Device>();
     private static ArduinoBoard instance = null;
 
+    public void setDevStatusByIndex(int i, boolean stat) {
+               deviceList.get(i).setStatus(stat);
+    }
+
+    public List<Device> getDeviceList() {
+        return deviceList;
+    }
+
+    public String getIpAddr() {
+        return ipAddr;
+    }
 
     public static ArduinoBoard getInstance() {
         if (instance == null)
             instance = new ArduinoBoard();
-
         return instance;
     }
 
@@ -43,6 +54,6 @@ public class ArduinoBoard {
         for (Device dev : deviceList) {
             deviceListStr += dev.toString();
         }
-        return "{ \"ip\":\"" + ipAddr + "\"," + "[" + deviceListStr + "] }";
+        return "{ \"ip\":\"" + ipAddr + "\",\n" + "[" + deviceListStr + "] }";
     }
 }
