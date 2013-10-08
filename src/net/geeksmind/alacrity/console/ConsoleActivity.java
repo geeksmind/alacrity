@@ -6,8 +6,8 @@ import android.view.View;
 import android.widget.*;
 import net.geeksmind.alacrity.R;
 import net.geeksmind.alacrity.component.ArduinoBoard;
+import net.geeksmind.alacrity.shieldComm.HttpGetTask;
 import net.geeksmind.alacrity.shieldComm.OnAsynTaskCallback;
-import net.geeksmind.alacrity.shieldComm.ShieldComm;
 
 /**
  * Author: coderh
@@ -24,6 +24,11 @@ public class ConsoleActivity extends Activity {
     // arduino board instance
     private ArduinoBoard ardBd = ArduinoBoard.getInstance();
 
+    public void showToast(String msg) {
+        Toast toast = Toast.makeText(ConsoleActivity.this.getApplicationContext(), msg, Toast.LENGTH_SHORT);
+        toast.show();
+    }
+
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.console);
@@ -32,7 +37,15 @@ public class ConsoleActivity extends Activity {
         statusContent = (TextView) this.findViewById(R.id.textViewStatusContent);
         deviceListView = (ListView) this.findViewById(R.id.deviceListView);
 
-        statusContent.setText("sync to " + ardBd.getIpAddr());
+        Bundle extras = getIntent().getExtras();
+        String ipSync = extras.getString("ipAddr");
+
+        if (ipSync != null) {
+            if (!ipSync.equals(ardBd.getIpAddr())) {
+                showToast("IpAddr doesn't match, please check server config");
+            }
+        }
+        statusContent.setText("\u279F" + ipSync);
 
         DevListAdaptor devAdapter = new DevListAdaptor(this, ardBd.getDeviceList());
         deviceListView.setAdapter(devAdapter);
@@ -44,7 +57,7 @@ public class ConsoleActivity extends Activity {
                 String url = ardBd.generateURL();
                 Toast toast = Toast.makeText(ConsoleActivity.this.getApplicationContext(), url, Toast.LENGTH_SHORT);
                 toast.show();
-                ShieldComm.emitArduino(new OnAsynTaskCallback() {
+                new HttpGetTask(new OnAsynTaskCallback() {
                     @Override
                     public void onTaskCompleted(String res) {
                         // TODO
@@ -54,7 +67,7 @@ public class ConsoleActivity extends Activity {
                     public void onTaskStarted() {
                         // TODO
                     }
-                }, url);
+                }).execute(url);
             }
         });
     }

@@ -1,7 +1,9 @@
 package net.geeksmind.alacrity.sync;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
@@ -16,8 +18,8 @@ import android.widget.*;
 import net.geeksmind.alacrity.R;
 import net.geeksmind.alacrity.component.ArduinoBoard;
 import net.geeksmind.alacrity.console.ConsoleActivity;
+import net.geeksmind.alacrity.shieldComm.HttpGetTask;
 import net.geeksmind.alacrity.shieldComm.OnAsynTaskCallback;
-import net.geeksmind.alacrity.shieldComm.ShieldComm;
 import org.json.JSONException;
 
 public class SyncActivity extends Activity {
@@ -44,7 +46,6 @@ public class SyncActivity extends Activity {
     private EditText edtTextIpAddrChunk3;
     private EditText edtTextIpAddrChunk4;
     private LinearLayout layoutIpAddr;
-    private ProgressBar prgBar;
 
     /**
      * Called when the activity is first created.
@@ -64,7 +65,6 @@ public class SyncActivity extends Activity {
         edtTextIpAddrChunk3 = (EditText) this.findViewById(R.id.editViewIpAddr3);
         edtTextIpAddrChunk4 = (EditText) this.findViewById(R.id.editViewIpAddr4);
         layoutIpAddr = (LinearLayout) this.findViewById(R.id.linearLayoutIpChunkList);
-        prgBar = (ProgressBar) this.findViewById(R.id.progressBar);
 
 
         addListenersToIpChunks(edtTextIpAddrChunk1, edtTextIpAddrChunk2, edtTextIpAddrChunk3, edtTextIpAddrChunk4);
@@ -102,6 +102,12 @@ public class SyncActivity extends Activity {
             }
         });
 
+        // This widget is only for sync clickListener
+        final ProgressDialog progDailog = new ProgressDialog(this);
+        progDailog.setIndeterminate(true);
+        progDailog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+        progDailog.setCancelable(true);
+
         syncButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -111,28 +117,38 @@ public class SyncActivity extends Activity {
                 ConnectivityManager connMgr = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
                 NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
                 if (networkInfo != null && networkInfo.isConnected()) {
-                    ShieldComm.syncArduino(new OnAsynTaskCallback() {
+                    final HttpGetTask getTask = new HttpGetTask(new OnAsynTaskCallback() {
                         @Override
                         public void onTaskCompleted(String res) {
-                            prgBar.setVisibility(ProgressBar.INVISIBLE);
+                            progDailog.dismiss();
                             if (res.startsWith("ERROR")) {
                                 showToast(NETWORK_CONNECTION_ERROR_MSG + " : " + guiIpAddr + "\nERROR CODE = " + res.split(":")[1]);
                             } else {
                                 try {
                                     ArduinoBoard.getInstance().init(res);
 //                                    showToast(ArduinoBoard.getInstance().toString());
-                                    goToConsole();
+                                    goToConsole(guiIpAddr);
                                 } catch (JSONException e) {
                                     showToast(JSON_ERROR_MSG);
                                 }
                             }
                         }
-
                         @Override
                         public void onTaskStarted() {
-                            prgBar.setVisibility(ProgressBar.VISIBLE);
+                            progDailog.show();
+                            progDailog.setMessage("Sync to " + guiIpAddr + " ...");
                         }
-                    }, url);
+                    });
+
+                    progDailog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+                        @Override
+                        public void onCancel(DialogInterface dialog) {
+                            getTask.cancel(true);
+                            showToast("Sync cancelled.");
+                        }
+                    });
+
+                    getTask.execute(url);
                 } else {
                     showToast(NETWORK_NOT_AVAILABLE_ERROR_MSG);
                 }
@@ -214,9 +230,10 @@ public class SyncActivity extends Activity {
         }
     }
 
-    public void goToConsole() {
-        Intent intentEdit = new Intent(SyncActivity.this, ConsoleActivity.class);
-        startActivity(intentEdit);
+    public void goToConsole(String ip) {
+        Intent itt = new Intent(SyncActivity.this, ConsoleActivity.class);
+        itt.putExtra("ipAddr", ip);
+        startActivity(itt);
     }
 
     public void showToast(String msg) {

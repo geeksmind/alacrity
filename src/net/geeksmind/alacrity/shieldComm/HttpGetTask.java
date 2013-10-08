@@ -34,9 +34,7 @@ public class HttpGetTask extends AsyncTask<String, Void, String> {
 
         // Create Request to server and get response
         HttpGet httpget = new HttpGet(url);
-        Log.d("SYNC", "msgRcv1 = ");
         HttpResponse response = HttpClientFactory.getInstance().execute(httpget);
-        Log.d("SYNC", "msgRcv2 = ");
 
         // Get status code
         statusCode = response.getStatusLine().getStatusCode();
