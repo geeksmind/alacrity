@@ -16,7 +16,7 @@ import android.widget.*;
 import net.geeksmind.alacrity.R;
 import net.geeksmind.alacrity.component.ArduinoBoard;
 import net.geeksmind.alacrity.console.ConsoleActivity;
-import net.geeksmind.alacrity.shieldComm.OnTaskCompleted;
+import net.geeksmind.alacrity.shieldComm.OnAsynTaskCallback;
 import net.geeksmind.alacrity.shieldComm.ShieldComm;
 import org.json.JSONException;
 
@@ -44,6 +44,7 @@ public class SyncActivity extends Activity {
     private EditText edtTextIpAddrChunk3;
     private EditText edtTextIpAddrChunk4;
     private LinearLayout layoutIpAddr;
+    private ProgressBar prgBar;
 
     /**
      * Called when the activity is first created.
@@ -63,6 +64,7 @@ public class SyncActivity extends Activity {
         edtTextIpAddrChunk3 = (EditText) this.findViewById(R.id.editViewIpAddr3);
         edtTextIpAddrChunk4 = (EditText) this.findViewById(R.id.editViewIpAddr4);
         layoutIpAddr = (LinearLayout) this.findViewById(R.id.linearLayoutIpChunkList);
+        prgBar = (ProgressBar) this.findViewById(R.id.progressBar);
 
 
         addListenersToIpChunks(edtTextIpAddrChunk1, edtTextIpAddrChunk2, edtTextIpAddrChunk3, edtTextIpAddrChunk4);
@@ -109,20 +111,26 @@ public class SyncActivity extends Activity {
                 ConnectivityManager connMgr = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
                 NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
                 if (networkInfo != null && networkInfo.isConnected()) {
-                    ShieldComm.syncArduino(new OnTaskCompleted() {
+                    ShieldComm.syncArduino(new OnAsynTaskCallback() {
                         @Override
                         public void onTaskCompleted(String res) {
+                            prgBar.setVisibility(ProgressBar.INVISIBLE);
                             if (res.startsWith("ERROR")) {
                                 showToast(NETWORK_CONNECTION_ERROR_MSG + " : " + guiIpAddr + "\nERROR CODE = " + res.split(":")[1]);
                             } else {
                                 try {
                                     ArduinoBoard.getInstance().init(res);
-                                    showToast(ArduinoBoard.getInstance().toString());
+//                                    showToast(ArduinoBoard.getInstance().toString());
                                     goToConsole();
                                 } catch (JSONException e) {
                                     showToast(JSON_ERROR_MSG);
                                 }
                             }
+                        }
+
+                        @Override
+                        public void onTaskStarted() {
+                            prgBar.setVisibility(ProgressBar.VISIBLE);
                         }
                     }, url);
                 } else {

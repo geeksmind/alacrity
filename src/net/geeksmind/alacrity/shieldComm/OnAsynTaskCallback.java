@@ -5,6 +5,7 @@ package net.geeksmind.alacrity.shieldComm;
  * Date: 9/27/13
  * Time: 10:35 AM
  */
-public interface OnTaskCompleted {
+public interface OnAsynTaskCallback {
     void onTaskCompleted(String res);
+    void onTaskStarted();
 }

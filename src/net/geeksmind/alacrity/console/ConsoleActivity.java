@@ -2,12 +2,11 @@ package net.geeksmind.alacrity.console;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.*;
 import net.geeksmind.alacrity.R;
 import net.geeksmind.alacrity.component.ArduinoBoard;
-import net.geeksmind.alacrity.shieldComm.OnTaskCompleted;
+import net.geeksmind.alacrity.shieldComm.OnAsynTaskCallback;
 import net.geeksmind.alacrity.shieldComm.ShieldComm;
 
 /**
@@ -45,9 +44,14 @@ public class ConsoleActivity extends Activity {
                 String url = ardBd.generateURL();
                 Toast toast = Toast.makeText(ConsoleActivity.this.getApplicationContext(), url, Toast.LENGTH_SHORT);
                 toast.show();
-                ShieldComm.emitArduino(new OnTaskCompleted() {
+                ShieldComm.emitArduino(new OnAsynTaskCallback() {
                     @Override
                     public void onTaskCompleted(String res) {
+                        // TODO
+                    }
+
+                    @Override
+                    public void onTaskStarted() {
                         // TODO
                     }
                 }, url);

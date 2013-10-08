@@ -15,9 +15,9 @@ import java.io.IOException;
  */
 public class HttpGetTask extends AsyncTask<String, Void, String> {
     private int statusCode = 0;
-    private OnTaskCompleted listener;
+    private OnAsynTaskCallback listener;
 
-    public HttpGetTask(OnTaskCompleted listener) {
+    public HttpGetTask(OnAsynTaskCallback listener) {
         this.listener = listener;
     }
 
@@ -41,6 +41,11 @@ public class HttpGetTask extends AsyncTask<String, Void, String> {
         // Get status code
         statusCode = response.getStatusLine().getStatusCode();
         return new BasicResponseHandler().handleResponse(response);
+    }
+
+    @Override
+    protected void onPreExecute() {
+        listener.onTaskStarted();
     }
 
     @Override
